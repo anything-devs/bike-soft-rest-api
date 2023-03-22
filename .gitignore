@@ -1,0 +1,4 @@
+#Archivo donde van a ir las variables de entorno
+.env
+#Carpeta temporal que se crea con el comando air .
+./tmp
