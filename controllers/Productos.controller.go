@@ -28,7 +28,7 @@ func FiltroBajasUnidades(ctx *gin.Context) {
 	var productos []models.Producto
 	var filtrado []models.Producto
 
-	cantidad, err := strconv.Atoi(ctx.Query("cantidad"))
+	cantidad, err := strconv.Atoi(ctx.Param("cantidad"))
 	if err != nil {
 		// Manejo de error si el valor de cantidad no es un número válido
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "La cantidad debe ser un número entero válido"})
@@ -43,8 +43,8 @@ func FiltroBajasUnidades(ctx *gin.Context) {
 
 	/*
 	* Manejo del filtrado por cantidad,
-	* esto se debe hacer en la ruta http://localhost:8080/productos/filtrados
-	* agregando ?cantidad= mas el numero que se busca
+	* esto se debe hacer en la ruta http://localhost:8080/productos/filtradosBajasUnidades/
+	* más el número de bajas unidades requeridos
 	 */
 	for _, producto := range productos {
 		if int(producto.Cantidad) < cantidad {
