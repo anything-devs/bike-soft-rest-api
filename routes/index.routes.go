@@ -15,8 +15,9 @@ func rutasInicio(router *gin.Engine) {
 }
 
 /*
-Metodo que contiene las rutas que se utilizan con productos
-*/
+* Método que contiene las rutas que se utilizan con productos
+ */
 func rutasProductos(router *gin.Engine) {
 	router.GET("/productos", controllers.GetProductos)
+	router.GET("/productos/filtrados", controllers.FiltroBajasUnidades)
 }
