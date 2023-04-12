@@ -111,7 +111,20 @@ func ActualizarStock(ctx *gin.Context) {
 		return
 	}
 
+	if actualizarProducto.PrecioBase != 0 {
+		producto.Precio_base = actualizarProducto.PrecioBase
+	}
+
 	if err := configs.BD.Model(&producto).Updates(models.Producto{Cantidad: int8(actualizarProducto.Cantidad)}).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if actualizarProducto.Cantidad > 0 {
+		producto.Cantidad = int8(actualizarProducto.Cantidad)
+	}
+
+	if err := configs.BD.Model(&producto).Updates(models.Producto{Precio_base: float32(actualizarProducto.PrecioBase)}).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
