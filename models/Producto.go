@@ -20,8 +20,8 @@ type Producto struct {
 Struct para realizar las consultas por nombre o codigo de un producto especifico
 */
 type ProductoGet struct {
-	Codigo string `json:"codigo"`
-	Nombre string `json:"nombre"`
+	Codigo string `form:"codigo"`
+	Nombre string `form:"nombre"`
 }
 
 type ActualizarProducto struct {

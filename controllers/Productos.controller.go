@@ -75,12 +75,12 @@ func FiltroBajasUnidades(ctx *gin.Context) {
 
 /*
 * Método para obtener un producto por código o nombre especifico
-* esto se debe hacer en la ruta http://localhost:8080/producto
+* esto se debe hacer en la ruta http://localhost:8080/producto?nombre=&codigo=, puede ser cualquier parametro
  */
 func GetProducto(ctx *gin.Context) {
 	var producto models.Producto
 	var productoGet models.ProductoGet
-	if ctx.BindJSON(&productoGet) == nil {
+	if ctx.ShouldBind(&productoGet) == nil {
 		//Expresión regular para validación de caracteristicas del codigo del producto
 		match, _ := regexp.MatchString("^[[:alpha:]]{3}[[:digit:]]{3}$", productoGet.Codigo)
 		if productoGet.Codigo != "" && productoGet.Nombre == "" {
