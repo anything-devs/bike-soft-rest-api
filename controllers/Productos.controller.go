@@ -13,9 +13,21 @@ import (
 /*
 * Método para obtener la lista de los productos
  */
-func GetProductos(ctx *gin.Context) {
+func GetProductosAZ(ctx *gin.Context) {
 	var productos []models.Producto
 	if err := configs.BD.Order("nombre").Find(&productos).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, productos)
+}
+
+/*
+* Método para obtener la lista de los productos
+ */
+func GetProductosZA(ctx *gin.Context) {
+	var productos []models.Producto
+	if err := configs.BD.Order("nombre DESC").Find(&productos).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
