@@ -20,5 +20,5 @@ func rutasInicio(router *gin.Engine) {
 func rutasProductos(router *gin.Engine) {
 	router.GET("/productos", controllers.GetProductos)
 	router.GET("/productos/filtradosBajasUnidades/:cantidad", controllers.FiltroBajasUnidades)
-	router.PUT("/productoActualizarCantidad/:id", controllers.ActualizarStock)
+	router.GET("/producto", controllers.GetProducto)
 }
