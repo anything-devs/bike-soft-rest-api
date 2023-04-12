@@ -25,5 +25,6 @@ type ProductoGet struct {
 }
 
 type ActualizarProducto struct {
-	Cantidad int `json:"cantidad"`
+	Cantidad   int     `json:"cantidad"`
+	PrecioBase float32 `json:"precio_base"`
 }
