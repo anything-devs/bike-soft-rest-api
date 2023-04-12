@@ -3,8 +3,8 @@ package models
 import "gorm.io/gorm"
 
 /*
-Modelo de base de datos para la tabla productos
-*/
+* Modelo de base de datos para la tabla productos
+ */
 type Producto struct {
 	gorm.Model
 
@@ -14,4 +14,8 @@ type Producto struct {
 	Precio_base  float32 `gorm:"type:float;not null" json:"precio_base"`
 	Precio_venta float32 `gorm:"type:float;not null" json:"precio_venta"`
 	Cantidad     int8    `gorm:"type:int;" json:"cantidad"`
+}
+
+type ActualizarProducto struct {
+	Cantidad int `json:"cantidad"`
 }

@@ -63,23 +63,24 @@ func FiltroBajasUnidades(ctx *gin.Context) {
 func ActualizarStock(ctx *gin.Context) {
 	id := ctx.Param("id")
 
-	// Obtener la nueva cantidad de la URL
-	nuevaCantidad, err := strconv.Atoi(ctx.Param("cantidad"))
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "La cantidad debe ser un número entero válido"})
-		return
-	}
-
 	// Buscar el producto en la base de datos y actualizar la cantidad
 	var producto models.Producto
 	if err := configs.BD.Where("id = ?", id).First(&producto).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado"})
 		return
 	}
-	producto.Cantidad = int8(nuevaCantidad)
-	if err := configs.BD.Save(&producto).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar el stock del producto"})
+
+	var actualizarProducto models.ActualizarProducto
+
+	if err := ctx.ShouldBindJSON(&actualizarProducto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	if err := configs.BD.Model(&producto).Updates(models.Producto{Cantidad: int8(actualizarProducto.Cantidad)}).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, producto)
 }
