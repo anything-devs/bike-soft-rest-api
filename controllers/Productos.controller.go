@@ -93,3 +93,28 @@ func GetProducto(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusBadRequest, gin.H{"error": "Debe escribir un código o nombre de producto"})
 }
+
+func ActualizarStock(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	// Buscar el producto en la base de datos y actualizar la cantidad
+	var producto models.Producto
+	if err := configs.BD.Where("id = ?", id).First(&producto).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado"})
+		return
+	}
+
+	var actualizarProducto models.ActualizarProducto
+
+	if err := ctx.ShouldBindJSON(&actualizarProducto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := configs.BD.Model(&producto).Updates(models.Producto{Cantidad: int8(actualizarProducto.Cantidad)}).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, producto)
+}

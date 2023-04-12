@@ -3,8 +3,8 @@ package models
 import "gorm.io/gorm"
 
 /*
-Modelo de base de datos para la tabla productos
-*/
+* Modelo de base de datos para la tabla productos
+ */
 type Producto struct {
 	gorm.Model
 
@@ -22,4 +22,8 @@ Struct para realizar las consultas por nombre o codigo de un producto especifico
 type ProductoGet struct {
 	Codigo string `json:"codigo"`
 	Nombre string `json:"nombre"`
+}
+
+type ActualizarProducto struct {
+	Cantidad int `json:"cantidad"`
 }
