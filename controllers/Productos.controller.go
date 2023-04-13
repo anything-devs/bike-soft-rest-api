@@ -78,7 +78,7 @@ func FiltroBajasUnidades(ctx *gin.Context) {
 * esto se debe hacer en la ruta http://localhost:8080/producto?nombre=&codigo=, puede ser cualquier parametro
  */
 func GetProducto(ctx *gin.Context) {
-	var producto models.Producto
+	var productos []models.Producto
 	var productoGet models.ProductoGet
 	if ctx.ShouldBind(&productoGet) == nil {
 		//Expresión regular para validación de caracteristicas del codigo del producto
@@ -88,18 +88,18 @@ func GetProducto(ctx *gin.Context) {
 				ctx.JSON(http.StatusBadRequest, gin.H{"error": "El código debe tener una longitud de 6 caracteres, 3 letras y 3 números"})
 				return
 			}
-			if err := configs.BD.Where("codigo= ?", productoGet.Codigo).First(&producto).Error; err != nil {
+			if err := configs.BD.Where("codigo= ?", productoGet.Codigo).First(&productos).Error; err != nil {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado por código"})
 				return
 			}
-			ctx.JSON(http.StatusOK, producto)
+			ctx.JSON(http.StatusOK, productos)
 			return
 		} else {
-			if err := configs.BD.Where("nombre= ?", productoGet.Nombre).First(&producto).Error; err != nil {
+			if err := configs.BD.Where("nombre LIKE ?", productoGet.Nombre+"%").Find(&productos).Error; err != nil {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado por nombre"})
 				return
 			}
-			ctx.JSON(http.StatusOK, producto)
+			ctx.JSON(http.StatusOK, productos)
 			return
 		}
 	}
