@@ -9,11 +9,11 @@ type Producto struct {
 	gorm.Model
 
 	ID           uint    `gorm:"primaryKey"`
-	Codigo       string  `gorm:"type:varchar(10);not null;unique_index" json:"codigo" binding:"required"`
-	Nombre       string  `gorm:"type:varchar(100);not null" json:"nombre" binding:"required"`
-	Precio_base  float32 `gorm:"type:float;not null" json:"precio_base" binding:"required"`
-	Precio_venta float32 `gorm:"type:float;not null" json:"precio_venta" binding:"required"`
-	Cantidad     int8    `gorm:"type:int;" json:"cantidad" binding:"required"`
+	Codigo       string  `gorm:"type:varchar(10);not null;unique_index" json:"codigo"`
+	Nombre       string  `gorm:"type:varchar(100);not null" json:"nombre"`
+	Precio_base  float32 `gorm:"type:float;not null" json:"precio_base"`
+	Precio_venta float32 `gorm:"type:float;not null" json:"precio_venta"`
+	Cantidad     int8    `gorm:"type:int;" json:"cantidad"`
 }
 
 /*
@@ -27,4 +27,11 @@ type ProductoGet struct {
 type ActualizarProducto struct {
 	Cantidad   int     `json:"cantidad"`
 	PrecioBase float32 `json:"precio_base"`
+}
+
+type NuevoProducto struct {
+	Codigo      string  `json:"codigo" binding:"required"`
+	Nombre      string  `json:"nombre" binding:"required"`
+	Precio_base float32 `json:"precio_base" binding:"required"`
+	Cantidad    int8    `json:"cantidad" binding:"required"`
 }

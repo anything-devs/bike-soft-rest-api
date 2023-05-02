@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"math"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -81,7 +82,7 @@ func GetProducto(ctx *gin.Context) {
 	var productos []models.Producto
 	var productoGet models.ProductoGet
 	if ctx.ShouldBind(&productoGet) == nil {
-		//Expresión regular para validación de caracteristicas del codigo del producto
+
 		match, _ := regexp.MatchString("^[[:alpha:]]{3}[[:digit:]]{3}$", productoGet.Codigo)
 		if productoGet.Codigo != "" && productoGet.Nombre == "" {
 			if !match {
@@ -142,4 +143,30 @@ func ActualizarStock(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, producto)
+}
+
+/*
+Metodo que crea productos nuevos en la base de datos
+@param ctx: parametro del contexto del programa
+@return el nuevo producto creado
+*/
+func CrearProducto(ctx *gin.Context) {
+	var producto models.NuevoProducto
+	const IVA float64 = 1.19
+	const G float64 = 0.75
+
+	if err := ctx.ShouldBindJSON(&producto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	nuevoProducto := models.Producto{Codigo: producto.Codigo, Nombre: producto.Nombre,
+		Precio_base: producto.Precio_base, Precio_venta: float32(math.Round((float64(producto.Precio_base) * IVA) / G)), Cantidad: producto.Cantidad}
+
+	if err := configs.BD.Create(&nuevoProducto).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, nuevoProducto)
 }
