@@ -14,6 +14,7 @@ type Producto struct {
 	Precio_base  float32 `gorm:"type:float;not null" json:"precio_base"`
 	Precio_venta float32 `gorm:"type:float;not null" json:"precio_venta"`
 	Cantidad     int8    `gorm:"type:int;" json:"cantidad"`
+	CategoriaID  uint    `gorm:"type:int;not null" json:"categoria_id"`
 }
 
 /*
@@ -34,4 +35,5 @@ type NuevoProducto struct {
 	Nombre      string  `json:"nombre" binding:"required"`
 	Precio_base float32 `json:"precio_base" binding:"required"`
 	Cantidad    int8    `json:"cantidad" binding:"required"`
+	CategoriaID uint    `json:"categoria_id" binding:"required"`
 }
