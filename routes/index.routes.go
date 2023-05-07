@@ -8,6 +8,7 @@ import (
 func Rutas(router *gin.Engine) {
 	rutasInicio(router)
 	rutasProductos(router)
+	rutasCategorias(router)
 }
 
 func rutasInicio(router *gin.Engine) {
@@ -24,4 +25,11 @@ func rutasProductos(router *gin.Engine) {
 	router.GET("/producto", controllers.GetProducto)
 	router.PUT("/productoActualizarStock/:id", controllers.ActualizarStock)
 	router.POST("/productos", controllers.CrearProducto)
+}
+
+/*
+* Método que contiene las rutas que se utilizan con categorias
+ */
+func rutasCategorias(router *gin.Engine) {
+	router.GET("/categorias", controllers.GetCategorias)
 }

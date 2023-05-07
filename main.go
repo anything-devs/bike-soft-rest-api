@@ -10,6 +10,7 @@ import (
 func main() {
 	configs.ConectarBD()
 	configs.BD.AutoMigrate(models.Producto{})
+	configs.BD.AutoMigrate(models.Categoria{})
 
 	router := gin.Default()
 

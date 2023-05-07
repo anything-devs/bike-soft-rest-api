@@ -11,13 +11,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const ERROR = "Error BD"
+
 /*
 * Método para obtener la lista de los productos
  */
 func GetProductosAZ(ctx *gin.Context) {
 	var productos []models.Producto
 	if err := configs.BD.Order("nombre").Find(&productos).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR: err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, productos)
@@ -29,7 +31,7 @@ func GetProductosAZ(ctx *gin.Context) {
 func GetProductosZA(ctx *gin.Context) {
 	var productos []models.Producto
 	if err := configs.BD.Order("nombre DESC").Find(&productos).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR: err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, productos)
@@ -86,25 +88,25 @@ func GetProducto(ctx *gin.Context) {
 		match, _ := regexp.MatchString("^[[:alpha:]]{3}[[:digit:]]{3}$", productoGet.Codigo)
 		if productoGet.Codigo != "" && productoGet.Nombre == "" {
 			if !match {
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": "El código debe tener una longitud de 6 caracteres, 3 letras y 3 números"})
+				ctx.JSON(http.StatusBadRequest, gin.H{"Error Codigo": "El código debe tener una longitud de 6 caracteres, 3 letras y 3 números"})
 				return
 			}
 			if err := configs.BD.Where("codigo= ?", productoGet.Codigo).First(&productos).Error; err != nil {
-				ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado por código"})
+				ctx.JSON(http.StatusNotFound, gin.H{ERROR: "Producto no encontrado por código en BD"})
 				return
 			}
 			ctx.JSON(http.StatusOK, productos)
 			return
 		} else {
 			if err := configs.BD.Where("nombre LIKE ?", productoGet.Nombre+"%").Find(&productos).Error; err != nil {
-				ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado por nombre"})
+				ctx.JSON(http.StatusNotFound, gin.H{ERROR: "Producto no encontrado por nombre en BD"})
 				return
 			}
 			ctx.JSON(http.StatusOK, productos)
 			return
 		}
 	}
-	ctx.JSON(http.StatusBadRequest, gin.H{"error": "Debe escribir un código o nombre de producto"})
+	ctx.JSON(http.StatusBadRequest, gin.H{"Error faltan datos": "Debe escribir un código o nombre de producto"})
 }
 
 func ActualizarStock(ctx *gin.Context) {
@@ -156,17 +158,35 @@ func CrearProducto(ctx *gin.Context) {
 	const G float64 = 0.75
 
 	if err := ctx.ShouldBindJSON(&producto); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"Error con los datos": err.Error()})
 		return
 	}
 
-	nuevoProducto := models.Producto{Codigo: producto.Codigo, Nombre: producto.Nombre,
-		Precio_base: producto.Precio_base, Precio_venta: float32(math.Round((float64(producto.Precio_base) * IVA) / G)), Cantidad: producto.Cantidad}
+	match, _ := regexp.MatchString("^[[:alpha:]]{3}[[:digit:]]{3}$", producto.Codigo)
+	if match {
+		nuevoProducto := models.Producto{Codigo: producto.Codigo, Nombre: producto.Nombre,
+			Precio_base: producto.Precio_base, Precio_venta: float32(math.Round((float64(producto.Precio_base) * IVA) / G)), Cantidad: producto.Cantidad, CategoriaID: producto.CategoriaID}
 
-	if err := configs.BD.Create(&nuevoProducto).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err := configs.BD.Where("codigo= ?", nuevoProducto.Codigo).First(&nuevoProducto).Error; err == nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"Error": "Producto ya existe en la BD"})
+			return
+		}
+
+		if nuevoProducto.Precio_base < 0 || nuevoProducto.Cantidad < 0 {
+			ctx.JSON(http.StatusBadRequest, gin.H{"Error": "El precio base y la cantidad deben ser mayores a 0"})
+			return
+		}
+
+		if err := configs.BD.Create(&nuevoProducto).Error; err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"Error al crear Producto": err.Error()})
+			return
+		} else {
+			ctx.JSON(http.StatusOK, nuevoProducto)
+		}
+
+	} else {
+		ctx.JSON(http.StatusBadRequest, gin.H{"Error Codigo": "El código debe tener una longitud de 6 caracteres, 3 letras y 3 números"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, nuevoProducto)
 }
