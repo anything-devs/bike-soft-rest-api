@@ -109,6 +109,11 @@ func GetProducto(ctx *gin.Context) {
 	ctx.JSON(http.StatusBadRequest, gin.H{"Error faltan datos": "Debe escribir un código o nombre de producto"})
 }
 
+/*
+* Método para actualizar la cantidad y/o el precio base de un producto en especifico
+@param ctx: parametro del contexto del programa
+@return el producto con la cantidad y/o el precio base actualizado
+*/
 func ActualizarStock(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -126,20 +131,32 @@ func ActualizarStock(ctx *gin.Context) {
 		return
 	}
 
+	if actualizarProducto.PrecioBase < 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "El precio base no puede ser negativo"})
+		return
+	}
+
+	if actualizarProducto.Cantidad != 0 {
+		cantidadStr := strconv.Itoa(actualizarProducto.Cantidad)
+		cantidad, err := strconv.Atoi(cantidadStr)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "La cantidad debe ser numérica"})
+			return
+		}
+
+		if cantidad < 0 {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "La cantidad no puede ser negativa"})
+			return
+		}
+
+		producto.Cantidad = int8(cantidad)
+	}
+
 	if actualizarProducto.PrecioBase != 0 {
 		producto.Precio_base = actualizarProducto.PrecioBase
 	}
 
-	if err := configs.BD.Model(&producto).Updates(models.Producto{Cantidad: int8(actualizarProducto.Cantidad)}).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	if actualizarProducto.Cantidad > 0 {
-		producto.Cantidad = int8(actualizarProducto.Cantidad)
-	}
-
-	if err := configs.BD.Model(&producto).Updates(models.Producto{Precio_base: float32(actualizarProducto.PrecioBase)}).Error; err != nil {
+	if err := configs.BD.Save(&producto).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -189,4 +206,34 @@ func CrearProducto(ctx *gin.Context) {
 		return
 	}
 
+}
+
+/*
+Metodo que elimina productos de la base de datos
+@param ctx: parametro del contexto del programa
+@return producto con el id seleccionado eliminado
+*/
+func EliminarProducto(ctx *gin.Context) {
+	// Obtener el ID del producto a eliminar desde los parámetros de la URL
+	id := ctx.Param("id")
+
+	var producto models.Producto
+	if err := configs.BD.Where("id = ?", id).First(&producto).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado"})
+		return
+	}
+
+	if producto.Cantidad > 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No se puede eliminar un producto con cantidad mayor a 0"})
+		return
+	}
+
+	// Eliminar el producto de la base de datos
+	if err := configs.BD.Delete(&producto).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Enviar una respuesta HTTP en formato JSON indicando que el producto ha sido eliminado
+	ctx.JSON(http.StatusOK, gin.H{"mensaje": "Producto eliminado correctamente"})
 }
