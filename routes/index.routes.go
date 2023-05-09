@@ -25,6 +25,7 @@ func rutasProductos(router *gin.Engine) {
 	router.GET("/producto", controllers.GetProducto)
 	router.PUT("/productoActualizarStock/:id", controllers.ActualizarStock)
 	router.POST("/productos", controllers.CrearProducto)
+	router.DELETE("/productoEliminar/:id", controllers.EliminarProducto)
 }
 
 /*
