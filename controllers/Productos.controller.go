@@ -131,29 +131,22 @@ func ActualizarStock(ctx *gin.Context) {
 		return
 	}
 
+	if actualizarProducto.Cantidad >= 0 {
+		producto.Cantidad = int8(actualizarProducto.Cantidad)
+	}
+
+	if actualizarProducto.PrecioBase > 0 {
+		producto.Precio_base = actualizarProducto.PrecioBase
+	}
+
 	if actualizarProducto.PrecioBase < 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "El precio base no puede ser negativo"})
 		return
 	}
 
-	if actualizarProducto.Cantidad != 0 {
-		cantidadStr := strconv.Itoa(actualizarProducto.Cantidad)
-		cantidad, err := strconv.Atoi(cantidadStr)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "La cantidad debe ser numérica"})
-			return
-		}
-
-		if cantidad < 0 {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "La cantidad no puede ser negativa"})
-			return
-		}
-
-		producto.Cantidad = int8(cantidad)
-	}
-
-	if actualizarProducto.PrecioBase != 0 {
-		producto.Precio_base = actualizarProducto.PrecioBase
+	if actualizarProducto.Cantidad < 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "La cantidad no puede ser negativa"})
+		return
 	}
 
 	if err := configs.BD.Save(&producto).Error; err != nil {
