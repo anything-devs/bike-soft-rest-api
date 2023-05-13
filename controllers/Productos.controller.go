@@ -8,17 +8,38 @@ import (
 
 	"github.com/anything-devs/bike-soft-rest-api.git/configs"
 	"github.com/anything-devs/bike-soft-rest-api.git/models"
+	"github.com/anything-devs/bike-soft-rest-api.git/repositories"
 	"github.com/gin-gonic/gin"
 )
 
 const ERROR = "Error BD"
+
+// ProductoController es el controlador de productos
+type ProductoControllerImpl struct {
+	productoRepository repositories.ProductoRepository
+}
+
+// ProductoController es la interfaz de ProductoController
+type ProductoController interface {
+	CrearProducto(ctx *gin.Context)
+	EliminarProducto(ctx *gin.Context)
+}
+
+/*
+* Constructor de ProductoController
+* @param productoRepository: repositorio de productos
+* @return instancia de ProductoController
+ */
+func NewProductoController(productoRepository repositories.ProductoRepository) ProductoController {
+	return &ProductoControllerImpl{productoRepository: productoRepository}
+}
 
 /*
 * Método para obtener la lista de los productos
  */
 func GetProductosAZ(ctx *gin.Context) {
 	var productos []models.Producto
-	if err := configs.BD.Order("nombre").Find(&productos).Error; err != nil {
+	if err := configs.ConectarBD().Order("nombre").Find(&productos).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{ERROR: err.Error()})
 		return
 	}
@@ -30,7 +51,7 @@ func GetProductosAZ(ctx *gin.Context) {
  */
 func GetProductosZA(ctx *gin.Context) {
 	var productos []models.Producto
-	if err := configs.BD.Order("nombre DESC").Find(&productos).Error; err != nil {
+	if err := configs.ConectarBD().Order("nombre DESC").Find(&productos).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{ERROR: err.Error()})
 		return
 	}
@@ -52,7 +73,7 @@ func FiltroBajasUnidades(ctx *gin.Context) {
 	}
 
 	// Manejo de la lista de productos
-	if err := configs.BD.Find(&productos).Error; err != nil {
+	if err := configs.ConectarBD().Find(&productos).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
@@ -91,14 +112,14 @@ func GetProducto(ctx *gin.Context) {
 				ctx.JSON(http.StatusBadRequest, gin.H{"Error Codigo": "El código debe tener una longitud de 6 caracteres, 3 letras y 3 números"})
 				return
 			}
-			if err := configs.BD.Where("codigo= ?", productoGet.Codigo).First(&productos).Error; err != nil {
+			if err := configs.ConectarBD().Where("codigo= ?", productoGet.Codigo).First(&productos).Error; err != nil {
 				ctx.JSON(http.StatusNotFound, gin.H{ERROR: "Producto no encontrado por código en BD"})
 				return
 			}
 			ctx.JSON(http.StatusOK, productos)
 			return
 		} else {
-			if err := configs.BD.Where("nombre LIKE ?", productoGet.Nombre+"%").Find(&productos).Error; err != nil {
+			if err := configs.ConectarBD().Where("nombre LIKE ?", productoGet.Nombre+"%").Find(&productos).Error; err != nil {
 				ctx.JSON(http.StatusNotFound, gin.H{ERROR: "Producto no encontrado por nombre en BD"})
 				return
 			}
@@ -119,7 +140,7 @@ func ActualizarStock(ctx *gin.Context) {
 
 	// Buscar el producto en la base de datos y actualizar la cantidad
 	var producto models.Producto
-	if err := configs.BD.Where("id = ?", id).First(&producto).Error; err != nil {
+	if err := configs.ConectarBD().Where("id = ?", id).First(&producto).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado"})
 		return
 	}
@@ -149,7 +170,7 @@ func ActualizarStock(ctx *gin.Context) {
 		return
 	}
 
-	if err := configs.BD.Save(&producto).Error; err != nil {
+	if err := configs.ConectarBD().Save(&producto).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -158,14 +179,13 @@ func ActualizarStock(ctx *gin.Context) {
 }
 
 /*
-Metodo que crea productos nuevos en la base de datos
+* Método para crear un producto
 @param ctx: parametro del contexto del programa
-@return el nuevo producto creado
 */
-func CrearProducto(ctx *gin.Context) {
+func (cp *ProductoControllerImpl) CrearProducto(ctx *gin.Context) {
 	var producto models.NuevoProducto
 	const IVA float64 = 1.19
-	const G float64 = 0.75
+	const GANANCIA float64 = 0.75
 
 	if err := ctx.ShouldBindJSON(&producto); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"Error con los datos": err.Error()})
@@ -174,12 +194,13 @@ func CrearProducto(ctx *gin.Context) {
 
 	match, _ := regexp.MatchString("^[[:alpha:]]{3}[[:digit:]]{3}$", producto.Codigo)
 	if match {
-		nuevoProducto := models.Producto{Codigo: producto.Codigo, Nombre: producto.Nombre,
-			Precio_base: producto.Precio_base, Precio_venta: float32(math.Round((float64(producto.Precio_base) * IVA) / G)), Cantidad: producto.Cantidad, CategoriaID: producto.CategoriaID}
-
-		if err := configs.BD.Where("codigo= ?", nuevoProducto.Codigo).First(&nuevoProducto).Error; err == nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"Error": "Producto ya existe en la BD"})
-			return
+		nuevoProducto := models.Producto{
+			Codigo:       producto.Codigo,
+			Nombre:       producto.Nombre,
+			Precio_base:  producto.Precio_base,
+			Precio_venta: float32(math.Round((float64(producto.Precio_base) * IVA) / GANANCIA)),
+			Cantidad:     producto.Cantidad,
+			CategoriaID:  producto.CategoriaID,
 		}
 
 		if nuevoProducto.Precio_base < 0 || nuevoProducto.Cantidad < 0 {
@@ -187,8 +208,8 @@ func CrearProducto(ctx *gin.Context) {
 			return
 		}
 
-		if err := configs.BD.Create(&nuevoProducto).Error; err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"Error al crear Producto": err.Error()})
+		if err := cp.productoRepository.CrearProducto(&nuevoProducto); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{ERROR: err.Error()})
 			return
 		} else {
 			ctx.JSON(http.StatusOK, nuevoProducto)
@@ -202,31 +223,22 @@ func CrearProducto(ctx *gin.Context) {
 }
 
 /*
-Metodo que elimina productos de la base de datos
+* Método para eliminar un producto en especifico
 @param ctx: parametro del contexto del programa
-@return producto con el id seleccionado eliminado
 */
-func EliminarProducto(ctx *gin.Context) {
-	// Obtener el ID del producto a eliminar desde los parámetros de la URL
+func (cp *ProductoControllerImpl) EliminarProducto(ctx *gin.Context) {
 	id := ctx.Param("id")
-
 	var producto models.Producto
-	if err := configs.BD.Where("id = ?", id).First(&producto).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Producto no encontrado"})
-		return
-	}
 
 	if producto.Cantidad > 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No se puede eliminar un producto con cantidad mayor a 0"})
 		return
 	}
 
-	// Eliminar el producto de la base de datos
-	if err := configs.BD.Delete(&producto).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	if err := cp.productoRepository.EliminarProducto(id, &producto); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Enviar una respuesta HTTP en formato JSON indicando que el producto ha sido eliminado
 	ctx.JSON(http.StatusOK, gin.H{"mensaje": "Producto eliminado correctamente"})
 }

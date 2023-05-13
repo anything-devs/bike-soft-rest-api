@@ -8,13 +8,13 @@ import (
 )
 
 func main() {
-	configs.ConectarBD()
-	configs.BD.AutoMigrate(models.Producto{})
-	configs.BD.AutoMigrate(models.Categoria{})
-
 	router := gin.Default()
 
-	routes.Rutas(router)
+	DB := configs.ConectarBD()
+	DB.Table("productos").AutoMigrate(models.Producto{})
+	DB.Table("categorias").AutoMigrate(models.Categoria{})
+
+	routes.Rutas(router, DB)
 
 	router.Run(":8080")
 }
