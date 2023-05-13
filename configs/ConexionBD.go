@@ -8,16 +8,13 @@ import (
 )
 
 var DSN = VariablesEnv("DSN")
-var BD *gorm.DB
 
-func ConectarBD() {
-	var err error
-
-	BD, err = gorm.Open(mysql.Open(DSN), &gorm.Config{})
+func ConectarBD() *gorm.DB {
+	DB, err := gorm.Open(mysql.Open(DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatalf(err.Error())
 	} else {
 		log.Println("BD conectada")
 	}
-
+	return DB
 }
